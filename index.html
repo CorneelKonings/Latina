@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Via Latina AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              roman: {
+                50: '#f9f7f5',
+                100: '#efebe6',
+                200: '#e0d8cf',
+                300: '#cabbad',
+                400: '#ac9585',
+                500: '#947867',
+                600: '#7d6152',
+                700: '#654e42',
+                800: '#544138',
+                900: '#463731',
+              },
+              gold: {
+                500: '#d4af37',
+                600: '#aa8c2c',
+              }
+            },
+            fontFamily: {
+              serif: ['Georgia', 'Cambria', 'Times New Roman', 'Times', 'serif'],
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #f9f7f5;
+        overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile */
+      }
+      /* Hide scrollbar for clean mobile UI */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "framer-motion": "https://aistudiocdn.com/framer-motion@^12.23.24",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "vite": "https://aistudiocdn.com/vite@^7.2.4",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "uuid": "https://aistudiocdn.com/uuid@^13.0.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "recharts": "https://aistudiocdn.com/recharts@^3.5.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
