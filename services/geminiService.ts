@@ -1,7 +1,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { INITIAL_VOCABULARY } from "../data/vocabulary";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Lazy initialization to prevent crash on load if Env var is missing
+const getAI = () => {
+  const key = process.env.API_KEY;
+  if (!key) {
+    console.warn("Google GenAI API Key is missing.");
+    return null;
+  }
+  return new GoogleGenAI({ apiKey: key });
+};
 
 interface TranslationResult {
   dutch: string;
@@ -35,6 +43,11 @@ export const translateLatinWord = async (latinWord: string): Promise<Translation
           grammarNotes: localMatch.grammarNotes,
           success: true
       };
+  }
+
+  const ai = getAI();
+  if (!ai) {
+    return { dutch: "", type: "", success: false };
   }
 
   // 2. Gemini API
