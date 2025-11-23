@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BookOpen, BarChart2, GraduationCap, Settings, Search, ChevronLeft, LogOut } from 'lucide-react';
 import { LatinWord, ViewState, MasteryLevel, User } from './types';
-import { loadWords, saveWords, resetProgress } from './services/StorageService';
+import { loadWords, saveWords, resetProgress } from './services/storageService';
 import { getCurrentUser, logout } from './services/authService';
 import { getDueWords, calculateNextSRS } from './utils/srsLogic';
 import Dashboard from './components/Dashboard';

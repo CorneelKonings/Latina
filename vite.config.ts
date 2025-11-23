@@ -7,8 +7,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, (process as any).cwd(), '');
 
   return {
-    // Base defaults to '/' which is perfect for Vercel. 
-    // Removed './' which was specific for GitHub Pages.
+    base: './', // Use relative paths for GitHub Pages deployment
     plugins: [react()],
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY || '')
