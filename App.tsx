@@ -176,154 +176,169 @@ function App() {
   );
 
   const renderDictionary = () => (
-    <div className="space-y-4 pb-24 h-full flex flex-col">
-       <div className="sticky top-0 bg-roman-50 z-10 py-2">
-            <h2 className="text-2xl font-serif text-roman-900 mb-4 px-1">Woordenlijst</h2>
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-roman-400" size={18} />
-                <input 
-                    type="text" 
-                    placeholder="Zoek Latijn of Nederlands..." 
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-roman-200 focus:outline-none focus:ring-2 focus:ring-roman-400 bg-white"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-       </div>
+    <div className="space-y-6 h-full flex flex-col animate-in fade-in duration-500">
+      <header className="flex items-center gap-4">
+          <button onClick={() => setView('dashboard')} className="p-2 bg-white rounded-full text-roman-600 shadow-sm">
+             <ChevronLeft />
+          </button>
+          <h2 className="text-2xl font-serif text-roman-900 font-bold">Woordenboek</h2>
+      </header>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-2">
-        {filteredWords.slice(0, 100).map(word => (
-            <div key={word.id} className="bg-white p-4 rounded-xl border border-roman-100 flex justify-between items-center">
-                <div>
-                    <div className="flex items-center gap-2">
-                         <span className="text-xs font-mono text-roman-400 w-10">{word.id.split('-')[1]}</span>
-                         <h3 className="text-lg font-serif text-roman-900">{word.latin}</h3>
-                    </div>
-                    <p className="text-sm text-roman-500 ml-12">{word.dutch}</p>
-                </div>
-                <div className="text-right">
-                    <span className="text-xs font-bold text-roman-300 uppercase block">Cap {word.chapter}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        word.srs.level === 3 ? 'bg-green-100 text-green-700' : 
-                        word.srs.level === 0 ? 'bg-gray-100 text-gray-500' : 'bg-yellow-100 text-yellow-700'
-                    }`}>
-                        Lvl {word.srs.level}
-                    </span>
-                </div>
-            </div>
-        ))}
-        {filteredWords.length === 0 && (
-            <div className="text-center text-roman-400 mt-10">Geen woorden gevonden.</div>
-        )}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-roman-400" size={18} />
+        <input 
+            type="text" 
+            placeholder="Zoek Latijn of Nederlands..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-roman-200 bg-white focus:outline-none focus:ring-2 focus:ring-roman-400"
+        />
       </div>
+
+      <div className="flex-1 overflow-y-auto space-y-2 pb-20 no-scrollbar">
+          {filteredWords.slice(0, 50).map(word => (
+              <div key={word.id} className="bg-white p-4 rounded-xl shadow-sm border border-roman-100 flex justify-between items-center">
+                  <div>
+                      <p className="font-serif font-bold text-roman-900">{word.latin}</p>
+                      <p className="text-sm text-roman-500">{word.dutch}</p>
+                  </div>
+                  <div className="text-right">
+                      <span className="text-xs uppercase font-bold text-roman-300 block">{word.type}</span>
+                      <span className="text-xs text-roman-400 block">Cap {word.chapter}</span>
+                  </div>
+              </div>
+          ))}
+          {filteredWords.length === 0 && (
+              <div className="text-center text-roman-400 py-8">
+                  Geen woorden gevonden.
+              </div>
+          )}
+      </div>
+
+       <button 
+        onClick={() => setView('add-word')}
+        className="fixed bottom-24 right-6 w-14 h-14 bg-roman-800 text-gold-500 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-10"
+      >
+        <span className="text-2xl font-bold">+</span>
+      </button>
     </div>
   );
 
-  const renderSettings = () => (
-      <div className="space-y-6">
-           <h2 className="text-2xl font-serif text-roman-900 mb-4">Instellingen</h2>
-           
-           <div className="bg-white p-6 rounded-xl border border-roman-200">
-               <h3 className="font-bold text-roman-800 mb-2">Account</h3>
-               <div className="flex items-center gap-3 mb-4">
-                   <div className="w-10 h-10 bg-roman-200 rounded-full flex items-center justify-center text-roman-600 font-bold text-lg">
-                       {user?.name.charAt(0).toUpperCase()}
-                   </div>
-                   <div>
-                       <div className="font-bold text-roman-900">{user?.name}</div>
-                       <div className="text-xs text-roman-500">{user?.email}</div>
-                   </div>
-               </div>
-               <button onClick={handleLogout} className="w-full py-2 border border-roman-200 text-roman-600 rounded-lg hover:bg-roman-50 flex items-center justify-center gap-2 text-sm">
-                   <LogOut size={16} /> Uitloggen
-               </button>
-           </div>
+  const renderAddWord = () => (
+      <div className="space-y-6 animate-in slide-in-from-bottom-4 fade-in">
+          <header className="flex items-center gap-4">
+            <button onClick={() => setView('dictionary')} className="p-2 bg-white rounded-full text-roman-600 shadow-sm">
+                <ChevronLeft />
+            </button>
+            <h2 className="text-2xl font-serif text-roman-900 font-bold">Woord Toevoegen</h2>
+          </header>
 
-           <div className="bg-white p-6 rounded-xl border border-roman-200">
-               <h3 className="font-bold text-roman-800 mb-2">Data Beheer</h3>
-               <p className="text-sm text-roman-500 mb-4">Reset je voortgang voor dit account.</p>
-               <div className="flex flex-col gap-2">
-                   <button onClick={() => { if(confirm("Zeker weten? Dit kan niet ongedaan worden gemaakt.")) resetProgress(user!.email); }} className="w-full py-3 border border-red-200 text-red-600 rounded-lg hover:bg-red-50">
-                       Reset Alle Voortgang
-                   </button>
-               </div>
-           </div>
+          <AddWordForm onAdd={handleAddWord} />
       </div>
-  )
+  );
+
+  const renderSettings = () => (
+      <div className="space-y-6 animate-in fade-in duration-500">
+          <header className="flex items-center gap-4">
+             <button onClick={() => setView('dashboard')} className="p-2 bg-white rounded-full text-roman-600 shadow-sm">
+                <ChevronLeft />
+             </button>
+             <h2 className="text-2xl font-serif text-roman-900 font-bold">Instellingen</h2>
+          </header>
+
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-roman-100 space-y-6">
+              <div className="flex items-center gap-4 pb-6 border-b border-roman-100">
+                  <div className="w-12 h-12 bg-roman-100 rounded-full flex items-center justify-center text-roman-600 font-bold text-xl">
+                      {user?.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                      <h3 className="font-serif font-bold text-roman-900">{user?.name}</h3>
+                      <p className="text-sm text-roman-500">{user?.email}</p>
+                  </div>
+              </div>
+
+              <div className="space-y-2">
+                  <button 
+                    onClick={() => {
+                        if(confirm('Weet je zeker dat je alle voortgang wilt wissen? Dit kan niet ongedaan worden gemaakt.')) {
+                            resetProgress(user!.email);
+                        }
+                    }}
+                    className="w-full text-left p-3 rounded-lg hover:bg-red-50 text-red-600 transition-colors flex items-center gap-2"
+                  >
+                      <Settings size={18} /> Voortgang Resetten
+                  </button>
+                   <button 
+                    onClick={handleLogout}
+                    className="w-full text-left p-3 rounded-lg hover:bg-roman-50 text-roman-600 transition-colors flex items-center gap-2"
+                  >
+                      <LogOut size={18} /> Uitloggen
+                  </button>
+              </div>
+          </div>
+          
+          <div className="text-center text-roman-300 text-xs">
+              Via Latina AI v1.0.0
+          </div>
+      </div>
+  );
+
+  // --- Main Render ---
 
   if (!user) {
       return <AuthScreen onLogin={setUser} />;
   }
 
   return (
-    <div className="min-h-screen bg-roman-50 font-sans text-roman-900 pb-20 md:pb-0 landscape:pb-0">
-        {showStudySetup && (
-            <StudySetup 
-                words={words} 
-                onStart={handleStartSession} 
-                onCancel={() => setShowStudySetup(false)} 
-            />
-        )}
+    <div className="min-h-screen bg-roman-50 font-sans text-roman-900 overflow-hidden relative selection:bg-gold-500 selection:text-white">
+      {/* Background Texture */}
+      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/cream-paper.png')" }}></div>
 
-        {/* Responsive Layout Container */}
-        <div className="max-w-md mx-auto min-h-screen bg-roman-50 relative shadow-2xl overflow-hidden flex flex-col landscape:flex-row landscape:max-w-4xl landscape:mx-auto landscape:h-screen">
-            
-            {/* Main Content Area */}
-            <main className="flex-1 p-6 overflow-y-auto no-scrollbar relative z-0 landscape:order-2">
-                {view === 'dashboard' && renderDashboard()}
-                {view === 'study' && renderStudy()}
-                {view === 'dictionary' && renderDictionary()}
-                {view === 'add-word' && <AddWordForm onAdd={handleAddWord} />}
-                {view === 'settings' && renderSettings()}
-            </main>
+      <main className="relative z-0 h-screen overflow-y-auto no-scrollbar p-6 pb-24 max-w-2xl mx-auto">
+        {view === 'dashboard' && renderDashboard()}
+        {view === 'study' && renderStudy()}
+        {view === 'dictionary' && renderDictionary()}
+        {view === 'add-word' && renderAddWord()}
+        {view === 'settings' && renderSettings()}
+      </main>
+      
+      {/* Study Setup Modal */}
+      {showStudySetup && (
+          <StudySetup 
+            words={words} 
+            onStart={handleStartSession} 
+            onCancel={() => setShowStudySetup(false)} 
+        />
+      )}
 
-            {/* Navigation - Bottom on Portrait, Left on Landscape */}
-            <nav className="fixed bottom-0 w-full max-w-md bg-white border-t border-roman-200 px-6 py-4 flex justify-between items-center z-50 safe-area-bottom landscape:static landscape:w-24 landscape:h-full landscape:flex-col landscape:justify-start landscape:gap-8 landscape:border-t-0 landscape:border-r landscape:pt-10 landscape:order-1">
-                
-                {/* Logo for landscape */}
-                <div className="hidden landscape:block text-roman-800 font-serif font-bold text-xl mb-4">VL</div>
+      {/* Bottom Navigation */}
+      {view !== 'study' && view !== 'add-word' && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-roman-200 px-6 py-4 flex justify-around items-center z-40 max-w-2xl mx-auto rounded-t-2xl shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)]">
+          <button 
+            onClick={() => setView('dashboard')}
+            className={`flex flex-col items-center gap-1 transition-colors ${view === 'dashboard' ? 'text-roman-800' : 'text-roman-400 hover:text-roman-600'}`}
+          >
+            <BarChart2 size={24} strokeWidth={view === 'dashboard' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Home</span>
+          </button>
+          
+          <button 
+            onClick={() => setView('dictionary')}
+            className={`flex flex-col items-center gap-1 transition-colors ${view === 'dictionary' ? 'text-roman-800' : 'text-roman-400 hover:text-roman-600'}`}
+          >
+            <BookOpen size={24} strokeWidth={view === 'dictionary' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Woorden</span>
+          </button>
 
-                <button 
-                    onClick={() => setView('dashboard')}
-                    className={`flex flex-col items-center gap-1 ${view === 'dashboard' ? 'text-roman-800' : 'text-roman-300'}`}
-                >
-                    <BarChart2 size={24} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Home</span>
-                </button>
-                 <button 
-                    onClick={() => setView('dictionary')}
-                    className={`flex flex-col items-center gap-1 ${view === 'dictionary' ? 'text-roman-800' : 'text-roman-300'}`}
-                >
-                    <BookOpen size={24} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Lijst</span>
-                </button>
-                
-                {/* FAB for Study/Add */}
-                <div className="relative -top-8 landscape:static landscape:top-auto">
-                    <button 
-                        onClick={() => setShowStudySetup(true)}
-                        className="w-14 h-14 bg-roman-800 rounded-full text-gold-500 shadow-lg shadow-roman-900/30 flex items-center justify-center hover:scale-105 transition-transform border-4 border-roman-50 landscape:w-12 landscape:h-12 landscape:border-2"
-                    >
-                        <GraduationCap size={28} className="landscape:w-6 landscape:h-6" />
-                    </button>
-                </div>
-
-                <button 
-                    onClick={() => setView('study')} 
-                    className={`flex flex-col items-center gap-1 ${view === 'study' ? 'text-roman-800' : 'text-roman-300'}`}
-                >
-                    <GraduationCap size={24} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Studie</span>
-                </button>
-                 <button 
-                    onClick={() => setView('settings')}
-                    className={`flex flex-col items-center gap-1 ${view === 'settings' ? 'text-roman-800' : 'text-roman-300'}`}
-                >
-                    <Settings size={24} />
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Opties</span>
-                </button>
-            </nav>
-        </div>
+          <button 
+            onClick={() => setView('settings')}
+            className={`flex flex-col items-center gap-1 transition-colors ${view === 'settings' ? 'text-roman-800' : 'text-roman-400 hover:text-roman-600'}`}
+          >
+            <Settings size={24} strokeWidth={view === 'settings' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Opties</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 }
