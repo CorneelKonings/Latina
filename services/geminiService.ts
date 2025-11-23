@@ -71,7 +71,13 @@ export const translateLatinWord = async (latinWord: string): Promise<Translation
       }
     });
 
-    const text = response.text;
+    let text = response.text || "{}";
+    
+    // Cleanup Markdown code blocks if present
+    if (text.includes("```json")) {
+        text = text.replace(/```json/g, "").replace(/```/g, "");
+    }
+
     if (text) {
       const data = JSON.parse(text);
       

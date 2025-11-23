@@ -7,7 +7,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, (process as any).cwd(), '');
 
   return {
-    base: './', // Use relative paths for GitHub Pages deployment
+    // Set base to './' to ensure assets load correctly on GitHub Pages (subdirectories)
+    base: './',
     plugins: [react()],
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY || '')
