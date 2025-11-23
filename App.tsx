@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen, BarChart2, GraduationCap, Settings, Search, ChevronLeft, LogOut } from 'lucide-react';
+import { BookOpen, BarChart2, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle } from 'lucide-react';
 import { LatinWord, ViewState, MasteryLevel, User } from './types';
 import { loadWords, saveWords, resetProgress } from './services/StorageService';
 import { getCurrentUser, logout } from './services/authService';
@@ -10,7 +10,43 @@ import AddWordForm from './components/AddWordForm';
 import StudySetup from './components/StudySetup';
 import AuthScreen from './components/AuthScreen';
 
-function App() {
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-red-50 p-6">
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-red-100 max-w-md text-center">
+            <AlertTriangle className="mx-auto text-red-500 mb-4" size={48} />
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Er is iets misgegaan</h2>
+            <p className="text-gray-600 mb-4 text-sm">Probeer de pagina te verversen.</p>
+            <pre className="bg-gray-100 p-3 rounded text-left text-xs text-red-800 overflow-auto max-h-40 mb-4">
+              {this.state.error?.message}
+            </pre>
+            <button 
+              onClick={() => window.location.reload()}
+              className="bg-red-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-red-700"
+            >
+              Verversen
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+function AppContent() {
   const [user, setUser] = useState<User | null>(null);
   const [words, setWords] = useState<LatinWord[]>([]);
   const [view, setView] = useState<ViewState>('dashboard');
@@ -340,6 +376,14 @@ function App() {
         </nav>
       )}
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
   );
 }
 
