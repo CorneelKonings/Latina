@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { BookOpen, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle, Play, Home } from 'lucide-react';
 import { LatinWord, ViewState, MasteryLevel, User, StudyInputMode } from './types';
-import { loadWords, saveWords, resetProgress } from './services/StorageService';
+import { loadWords, saveWords, resetProgress } from './services/storageService';
 import { getCurrentUser, logout } from './services/authService';
 import { getDueWords, calculateNextSRS } from './utils/srsLogic';
 import Dashboard from './components/Dashboard';
@@ -50,7 +50,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       );
     }
 
-    return this.props.children;
+    // Explicit cast to any to avoid "Property 'props' does not exist" error in some TS environments
+    return (this as any).props.children;
   }
 }
 
