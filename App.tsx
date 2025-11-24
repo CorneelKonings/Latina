@@ -325,7 +325,7 @@ function AppContent() {
           </div>
           
           <div className="text-center text-roman-300 text-xs">
-              Via Latina AI v1.0.0
+              Via Latina v1.0.0
           </div>
       </div>
   );
