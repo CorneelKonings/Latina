@@ -55,7 +55,9 @@ export const translateLatinWord = async (latinWord: string): Promise<Translation
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: `Translate the Latin word "${latinWord}" to Dutch. 
-      Provide the translation (include article de/het), grammatical type (noun, verb, etc.), gender (m/f/n) if noun, and conjugation/declension notes.
+      Provide the translation (include article de/het), grammatical type (noun, verb, etc.), gender (m/f/n) if noun.
+      If it is a NOUN, provide the genitive form in grammarNotes.
+      If it is a VERB, provide the principal parts (stamtijden) in grammarNotes (e.g. laudō, laudāre, laudāvī, laudātum).
       Return JSON only.`,
       config: {
         responseMimeType: "application/json",
@@ -65,7 +67,7 @@ export const translateLatinWord = async (latinWord: string): Promise<Translation
             dutch: { type: Type.STRING, description: "Dutch translation with article" },
             type: { type: Type.STRING, description: "Part of speech (noun, verb, etc)" },
             gender: { type: Type.STRING, description: "m, f, or n (if applicable)" },
-            grammarNotes: { type: Type.STRING, description: "Genitive form or conjugation info" }
+            grammarNotes: { type: Type.STRING, description: "Genitive form (nouns) or Principal Parts/Stem (verbs)" }
           }
         }
       }

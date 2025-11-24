@@ -92,7 +92,7 @@ const Flashcard: React.FC<FlashcardProps> = ({ word, onResult, currentIndex, tot
                 Caput {word.chapter}
             </div>
              <div className="absolute top-6 right-6 text-roman-300 font-mono text-xs">
-                 #{word.id.split('-')[1]}
+                 #{word.id.split('-')[1] || word.id}
             </div>
             
             <h2 className="text-5xl font-serif text-roman-900 mb-2 text-center font-bold tracking-tight">{word.latin}</h2>
@@ -107,19 +107,29 @@ const Flashcard: React.FC<FlashcardProps> = ({ word, onResult, currentIndex, tot
             className="absolute w-full h-full backface-hidden bg-roman-50 rounded-2xl shadow-xl border-2 border-roman-200 flex flex-col items-center justify-center p-8"
             style={{ backfaceVisibility: 'hidden', transform: "rotateY(180deg)" }}
         >
-             {/* Genitive and Gender displayed prominently at the top of content */}
-             <div className="flex items-center gap-3 mb-2">
-                 {word.grammarNotes && (
-                     <span className="text-xl text-roman-600 font-serif italic">
-                         {word.grammarNotes}
-                     </span>
-                 )}
-                 {word.gender && (
-                     <span className="w-8 h-8 flex items-center justify-center bg-roman-800 text-gold-500 rounded-full text-lg font-bold uppercase">
-                        {getGenderLabel(word.gender)}
-                    </span>
-                 )}
-             </div>
+             {/* Verb Stem Special Display */}
+             {word.type === 'verb' && word.grammarNotes ? (
+                <div className="mb-4 text-center">
+                    <span className="text-[10px] text-roman-400 uppercase tracking-widest">Stam</span>
+                    <div className="text-xl text-roman-600 font-serif italic">
+                        {word.grammarNotes}
+                    </div>
+                </div>
+             ) : (
+                 /* Noun/Adjective Display */
+                 <div className="flex items-center gap-3 mb-2">
+                     {word.grammarNotes && (
+                         <span className="text-xl text-roman-600 font-serif italic">
+                             {word.grammarNotes}
+                         </span>
+                     )}
+                     {word.gender && (
+                         <span className="w-8 h-8 flex items-center justify-center bg-roman-800 text-gold-500 rounded-full text-lg font-bold uppercase">
+                            {getGenderLabel(word.gender)}
+                        </span>
+                     )}
+                 </div>
+             )}
              
              {/* Word Type Abbreviation */}
              <div className="mb-4 text-roman-400 font-bold text-xs uppercase tracking-wider bg-roman-100 px-2 py-1 rounded">
@@ -145,7 +155,8 @@ const Flashcard: React.FC<FlashcardProps> = ({ word, onResult, currentIndex, tot
           <Check size={40} />
       </div>
 
-       <div className="absolute -bottom-24 left-0 right-0 flex justify-between px-4 z-50 pointer-events-auto landscape:bottom-4 landscape:justify-around landscape:hidden">
+        {/* Buttons - Now visible on Landscape/PC as well */}
+       <div className="absolute -bottom-24 left-0 right-0 flex justify-between px-4 z-50 pointer-events-auto landscape:-bottom-24 landscape:justify-around">
             <button 
                 onClick={(e) => { e.stopPropagation(); onResult(1); }}
                 className="flex items-center gap-2 px-6 py-4 bg-red-100 text-red-800 rounded-full shadow-lg border border-red-200 hover:bg-red-200 active:scale-95 transition-all"
