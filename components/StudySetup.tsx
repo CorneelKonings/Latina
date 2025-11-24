@@ -8,9 +8,12 @@ interface StudySetupProps {
   onCancel: () => void;
 }
 
-// Helper to keep track of the global book number
-interface WordWithIndex extends LatinWord {
-    globalIndex: number;
+interface GlobalRange {
+    startIndex: number;
+    endIndex: number;
+    label: string;
+    firstChapter: number;
+    lastChapter: number;
 }
 
 const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => {
@@ -27,72 +30,72 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
   const [specCaput, setSpecCaput] = useState<number>(1);
   const [specRangeIndex, setSpecRangeIndex] = useState<number>(0);
 
-  // 1. Calculate global order for all words to assign continuous book numbers (1, 2, ... N)
+  // 1. Calculate global order: Sort by Chapter then ID to ensure book order
   const sortedGlobalWords = useMemo(() => {
     return [...words]
-        .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
+        .sort((a, b) => {
+            if (a.chapter !== b.chapter) return a.chapter - b.chapter;
+            return a.id.localeCompare(b.id, undefined, { numeric: true });
+        })
         .map((w, index) => ({ ...w, globalIndex: index + 1 }));
   }, [words]);
 
-  // --- HERHALING DATA (Step 30) ---
-  const repBaseWords = useMemo(() => {
-      return sortedGlobalWords.filter(w => w.chapter === repCaput);
-  }, [sortedGlobalWords, repCaput]);
+  // Helper to generate continuous global ranges
+  const generateGlobalRanges = (step: number): GlobalRange[] => {
+      const ranges: GlobalRange[] = [];
+      if (sortedGlobalWords.length === 0) return ranges;
 
-  const repRanges = useMemo(() => {
-    const r = [];
-    if (repBaseWords.length === 0) return [];
-    
-    const step = 30;
-    for (let i = 0; i < repBaseWords.length; i += step) {
-      const chunk = repBaseWords.slice(i, i + step);
-      const startNum = chunk[0].globalIndex;
-      const endNum = chunk[chunk.length - 1].globalIndex;
-      
-      r.push({
-        startIndex: i,
-        endIndex: i + chunk.length,
-        label: `${startNum} - ${endNum}`
-      });
-    }
-    return r;
-  }, [repBaseWords]);
+      for (let i = 0; i < sortedGlobalWords.length; i += step) {
+          const chunk = sortedGlobalWords.slice(i, i + step);
+          if (chunk.length === 0) continue;
 
-  // --- SPECIFIEK DATA (Step 10) ---
-  const specBaseWords = useMemo(() => {
-      return sortedGlobalWords.filter(w => w.chapter === specCaput);
-  }, [sortedGlobalWords, specCaput]);
+          const first = chunk[0];
+          const last = chunk[chunk.length - 1];
 
-  const specRanges = useMemo(() => {
-    const r = [];
-    if (specBaseWords.length === 0) return [];
-    
-    const step = 10;
-    for (let i = 0; i < specBaseWords.length; i += step) {
-      const chunk = specBaseWords.slice(i, i + step);
-      const startNum = chunk[0].globalIndex;
-      const endNum = chunk[chunk.length - 1].globalIndex;
+          ranges.push({
+              startIndex: i,
+              endIndex: i + step,
+              label: `${first.globalIndex} - ${last.globalIndex}`,
+              firstChapter: first.chapter,
+              lastChapter: last.chapter
+          });
+      }
+      return ranges;
+  };
 
-      r.push({
-        startIndex: i,
-        endIndex: i + chunk.length,
-        label: `${startNum} - ${endNum}`
-      });
-    }
-    return r;
-  }, [specBaseWords]);
+  // --- HERHALING RANGES (Step 30) ---
+  const repRangesGlobal = useMemo(() => generateGlobalRanges(30), [sortedGlobalWords]);
+  
+  // Filter ranges for the selected Caput: Show if range overlaps with selected Caput
+  const visibleRepRanges = useMemo(() => {
+      return repRangesGlobal.filter(r => 
+          // Check overlap: Range starts before or in Caput AND ends in or after Caput
+          (r.firstChapter <= repCaput && r.lastChapter >= repCaput)
+      );
+  }, [repRangesGlobal, repCaput]);
+
+
+  // --- SPECIFIEK RANGES (Step 10) ---
+  const specRangesGlobal = useMemo(() => generateGlobalRanges(10), [sortedGlobalWords]);
+  
+  const visibleSpecRanges = useMemo(() => {
+      return specRangesGlobal.filter(r => 
+           (r.firstChapter <= specCaput && r.lastChapter >= specCaput)
+      );
+  }, [specRangesGlobal, specCaput]);
+
 
   const handleStart = () => {
     let selection: LatinWord[] = [];
 
     if (mode === 'repetition') {
         if (repScope === 'whole') {
-            selection = repBaseWords;
+            // Select all words strictly in this chapter
+            selection = sortedGlobalWords.filter(w => w.chapter === repCaput);
         } else {
-            const range = repRanges[repRangeIndex];
+            const range = visibleRepRanges[repRangeIndex];
             if (range) {
-                // Slice from the filtered chapter list
-                selection = repBaseWords.slice(range.startIndex, range.endIndex);
+                selection = sortedGlobalWords.slice(range.startIndex, range.endIndex);
             }
         }
 
@@ -108,9 +111,9 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
         }
     } else {
         // Specific Logic: Always ranges of 10
-        const range = specRanges[specRangeIndex];
+        const range = visibleSpecRanges[specRangeIndex];
         if (range) {
-            selection = specBaseWords.slice(range.startIndex, range.endIndex);
+             selection = sortedGlobalWords.slice(range.startIndex, range.endIndex);
         }
             
         if (selection.length === 0) {
@@ -121,6 +124,13 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
 
     onStart(selection, inputMode);
   };
+
+  const availableChapters = useMemo(() => {
+      const chapters = new Set(words.map(w => w.chapter));
+      // Ensure 1-7 are always there for the book structure, add others if present
+      [1,2,3,4,5,6,7].forEach(c => chapters.add(c));
+      return Array.from(chapters).sort((a: number, b: number) => a - b);
+  }, [words]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-roman-900/50 backdrop-blur-sm animate-in fade-in">
@@ -201,12 +211,12 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
               {/* Caput Selector */}
               <div>
                 <label className="block text-xs font-bold text-roman-500 uppercase mb-2">Selecteer Caput</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {[1, 2, 3, 4, 5, 6, 7].map(num => (
+                <div className="flex flex-wrap gap-2">
+                  {availableChapters.map(num => (
                     <button
                       key={num}
                       onClick={() => { setRepCaput(num); setRepRangeIndex(0); }}
-                      className={`py-2 rounded-lg font-serif font-bold transition-colors ${
+                      className={`w-10 h-10 rounded-lg font-serif font-bold transition-colors flex items-center justify-center ${
                         repCaput === num
                           ? 'bg-roman-600 text-white shadow-md'
                           : 'bg-roman-100 text-roman-600 hover:bg-roman-200'
@@ -245,20 +255,25 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
                          Kies Reeks (per 30)
                      </label>
                      <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto no-scrollbar">
-                       {repRanges.map((range, idx) => (
+                       {visibleRepRanges.map((range, idx) => (
                           <button
                             key={idx}
                             onClick={() => setRepRangeIndex(idx)}
-                            className={`py-2 px-3 rounded-lg text-sm font-bold border transition-all ${
+                            className={`py-2 px-3 rounded-lg text-sm font-bold border transition-all text-left ${
                                 repRangeIndex === idx
                                  ? 'border-roman-500 bg-roman-50 text-roman-900'
                                  : 'border-roman-200 text-roman-500 hover:border-roman-400'
                             }`}
                           >
-                              {range.label}
+                              <span className="block">{range.label}</span>
+                              {(range.firstChapter !== range.lastChapter) && (
+                                  <span className="text-[10px] text-roman-400 font-normal">
+                                      Cap {range.firstChapter} & Cap {range.lastChapter}
+                                  </span>
+                              )}
                           </button>
                        ))}
-                       {repRanges.length === 0 && <span className="text-sm text-roman-400 italic">Geen woorden gevonden.</span>}
+                       {visibleRepRanges.length === 0 && <span className="text-sm text-roman-400 italic">Geen reeksen gevonden.</span>}
                      </div>
                   </div>
               )}
@@ -288,17 +303,18 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
               <div className="bg-roman-50 p-4 rounded-lg border border-roman-100">
                   <p className="text-roman-700 text-sm italic">
                       Kies een hoofdstuk en een reeks van 10 woorden.
+                      Reeksen lopen door over hoofdstukgrenzen heen.
                   </p>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-roman-500 uppercase mb-2">Selecteer Caput</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {[1, 2, 3, 4, 5, 6, 7].map(num => (
+                <div className="flex flex-wrap gap-2">
+                  {availableChapters.map(num => (
                     <button
                       key={num}
                       onClick={() => { setSpecCaput(num); setSpecRangeIndex(0); }}
-                      className={`py-2 rounded-lg font-serif font-bold transition-colors ${
+                      className={`w-10 h-10 rounded-lg font-serif font-bold transition-colors flex items-center justify-center ${
                         specCaput === num
                           ? 'bg-roman-600 text-white shadow-md'
                           : 'bg-roman-100 text-roman-600 hover:bg-roman-200'
@@ -316,20 +332,25 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
                      Kies Reeks (per 10)
                  </label>
                  <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto no-scrollbar">
-                   {specRanges.map((range, idx) => (
+                   {visibleSpecRanges.map((range, idx) => (
                       <button
                         key={idx}
                         onClick={() => setSpecRangeIndex(idx)}
-                        className={`py-2 px-2 rounded-lg text-sm font-bold border transition-all ${
+                        className={`py-2 px-2 rounded-lg text-sm font-bold border transition-all flex flex-col items-center justify-center ${
                             specRangeIndex === idx
                              ? 'border-roman-500 bg-roman-50 text-roman-900'
                              : 'border-roman-200 text-roman-500 hover:border-roman-400'
                         }`}
                       >
-                          {range.label}
+                          <span>{range.label}</span>
+                          {(range.firstChapter !== range.lastChapter) && (
+                                <span className="text-[9px] text-roman-400 font-normal leading-none mt-1">
+                                    Cap {range.firstChapter}-{range.lastChapter}
+                                </span>
+                           )}
                       </button>
                    ))}
-                   {specRanges.length === 0 && <span className="text-sm text-roman-400 italic">Geen woorden gevonden.</span>}
+                   {visibleSpecRanges.length === 0 && <span className="text-sm text-roman-400 italic">Geen reeksen gevonden.</span>}
                  </div>
               </div>
 
