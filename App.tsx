@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen, BarChart2, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect, useMemo, Component, ReactNode } from 'react';
+import { BookOpen, BarChart2, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle, Play } from 'lucide-react';
 import { LatinWord, ViewState, MasteryLevel, User } from './types';
 import { loadWords, saveWords, resetProgress } from './services/StorageService';
 import { getCurrentUser, logout } from './services/authService';
@@ -11,7 +11,7 @@ import StudySetup from './components/StudySetup';
 import AuthScreen from './components/AuthScreen';
 
 interface ErrorBoundaryProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -24,8 +24,6 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     super(props);
     this.state = { hasError: false, error: null };
   }
-
-  state: ErrorBoundaryState;
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
@@ -150,12 +148,6 @@ function AppContent() {
             <h1 className="text-3xl font-serif font-bold text-roman-900">Via Latina</h1>
             <p className="text-roman-500 text-sm">Salve, {user?.name || 'Discipule'}.</p>
         </div>
-        <button 
-            onClick={() => setShowStudySetup(true)}
-            className="bg-roman-800 text-gold-500 px-6 py-3 rounded-full font-bold shadow-lg shadow-roman-900/20 hover:scale-105 transition-transform flex items-center gap-2"
-        >
-            <GraduationCap size={20} /> Start Studie
-        </button>
       </header>
 
       <div className="grid grid-cols-2 gap-4">
@@ -172,11 +164,19 @@ function AppContent() {
       </div>
 
       <Dashboard words={words} />
+
+      <button 
+        onClick={() => setShowStudySetup(true)}
+        className="fixed bottom-24 right-6 bg-roman-800 text-gold-500 pl-5 pr-6 py-4 rounded-full font-bold shadow-xl shadow-roman-900/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 z-30"
+      >
+        <Play size={24} fill="currentColor" />
+        <span className="text-lg">Start Studie</span>
+      </button>
     </div>
   );
 
   const renderStudy = () => (
-    <div className="h-full flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
+    <div className="h-full flex flex-col items-center justify-center animate-in zoom-in-95 duration-300 pb-32">
       {sessionComplete ? (
         <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-sm">
           <GraduationCap size={64} className="mx-auto text-roman-600 mb-4" />
@@ -190,7 +190,7 @@ function AppContent() {
           </button>
         </div>
       ) : (
-        <div className="w-full max-w-lg flex flex-col items-center landscape:flex-row landscape:justify-center landscape:gap-8">
+        <div className="w-full max-w-lg flex flex-col items-center landscape:flex-row landscape:justify-center landscape:gap-8 relative">
             <div className="w-full flex justify-between items-center mb-8 px-4 landscape:hidden">
                  <button onClick={() => setView('dashboard')} className="p-2 text-roman-600 hover:bg-roman-100 rounded-full">
                      <ChevronLeft />
@@ -325,7 +325,7 @@ function AppContent() {
           </div>
           
           <div className="text-center text-roman-300 text-xs">
-              Via Latina v1.0.0
+              Via Latina v1.0.1
           </div>
       </div>
   );
@@ -354,48 +354,4 @@ function AppContent() {
           <StudySetup 
             words={words} 
             onStart={handleStartSession} 
-            onCancel={() => setShowStudySetup(false)} 
-        />
-      )}
-
-      {/* Bottom Navigation */}
-      {view !== 'study' && view !== 'add-word' && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-roman-200 px-6 py-4 flex justify-around items-center z-40 max-w-2xl mx-auto rounded-t-2xl shadow-[0_-5px_20px_-5px_rgba(0,0,0,0.1)]">
-          <button 
-            onClick={() => setView('dashboard')}
-            className={`flex flex-col items-center gap-1 transition-colors ${view === 'dashboard' ? 'text-roman-800' : 'text-roman-400 hover:text-roman-600'}`}
-          >
-            <BarChart2 size={24} strokeWidth={view === 'dashboard' ? 2.5 : 2} />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Home</span>
-          </button>
-          
-          <button 
-            onClick={() => setView('dictionary')}
-            className={`flex flex-col items-center gap-1 transition-colors ${view === 'dictionary' ? 'text-roman-800' : 'text-roman-400 hover:text-roman-600'}`}
-          >
-            <BookOpen size={24} strokeWidth={view === 'dictionary' ? 2.5 : 2} />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Woorden</span>
-          </button>
-
-          <button 
-            onClick={() => setView('settings')}
-            className={`flex flex-col items-center gap-1 transition-colors ${view === 'settings' ? 'text-roman-800' : 'text-roman-400 hover:text-roman-600'}`}
-          >
-            <Settings size={24} strokeWidth={view === 'settings' ? 2.5 : 2} />
-            <span className="text-[10px] font-bold uppercase tracking-wider">Opties</span>
-          </button>
-        </nav>
-      )}
-    </div>
-  );
-}
-
-function App() {
-  return (
-    <ErrorBoundary>
-      <AppContent />
-    </ErrorBoundary>
-  );
-}
-
-export default App;
+            onCancel={() => setShowStudySetup(false

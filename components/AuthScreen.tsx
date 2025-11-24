@@ -120,6 +120,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                         {isLogin ? "Nog geen account? Maak er een aan" : "Heb je al een account? Log in"}
                     </button>
                 </div>
+                
+                <div className="mt-6 p-3 bg-blue-50 text-blue-800 text-xs rounded-lg text-center leading-relaxed">
+                    Opmerking: Gegevens worden lokaal op dit apparaat opgeslagen.
+                </div>
             </div>
         </div>
         

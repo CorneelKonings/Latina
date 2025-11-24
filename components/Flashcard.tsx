@@ -34,6 +34,28 @@ const Flashcard: React.FC<FlashcardProps> = ({ word, onResult, currentIndex, tot
       setFlipped(!flipped);
   };
 
+  const getGenderLabel = (g?: string) => {
+      if (!g) return null;
+      if (g.toLowerCase() === 'f') return 'v';
+      if (g.toLowerCase() === 'n') return 'o';
+      if (g.toLowerCase() === 'm/f') return 'm/v';
+      return g;
+  };
+
+  const getTypeLabel = (t: string) => {
+      const map: Record<string, string> = {
+          noun: 'Z.nw',
+          verb: 'Ww.',
+          adjective: 'B.nw',
+          adverb: 'Bw.',
+          preposition: 'Vz.',
+          conjunction: 'Vw.',
+          pronoun: 'Vnw.',
+          other: 'Overig'
+      };
+      return map[t.toLowerCase()] || t;
+  };
+
   return (
     <div className="relative w-full max-w-sm h-96 landscape:h-72 landscape:w-96 perspective-1000 group">
       {/* Progress Indicator */}
@@ -86,17 +108,22 @@ const Flashcard: React.FC<FlashcardProps> = ({ word, onResult, currentIndex, tot
             style={{ backfaceVisibility: 'hidden', transform: "rotateY(180deg)" }}
         >
              {/* Genitive and Gender displayed prominently at the top of content */}
-             <div className="flex items-center gap-3 mb-4">
+             <div className="flex items-center gap-3 mb-2">
                  {word.grammarNotes && (
-                     <span className="text-2xl text-roman-600 font-serif italic">
+                     <span className="text-xl text-roman-600 font-serif italic">
                          {word.grammarNotes}
                      </span>
                  )}
                  {word.gender && (
                      <span className="w-8 h-8 flex items-center justify-center bg-roman-800 text-gold-500 rounded-full text-lg font-bold uppercase">
-                        {word.gender}
+                        {getGenderLabel(word.gender)}
                     </span>
                  )}
+             </div>
+             
+             {/* Word Type Abbreviation */}
+             <div className="mb-4 text-roman-400 font-bold text-xs uppercase tracking-wider bg-roman-100 px-2 py-1 rounded">
+                 {getTypeLabel(word.type)}
              </div>
 
             {/* Dutch Translation */}
@@ -118,18 +145,18 @@ const Flashcard: React.FC<FlashcardProps> = ({ word, onResult, currentIndex, tot
           <Check size={40} />
       </div>
 
-       <div className="absolute -bottom-20 left-0 right-0 flex justify-between px-4 landscape:bottom-4 landscape:justify-around landscape:hidden">
+       <div className="absolute -bottom-24 left-0 right-0 flex justify-between px-4 z-50 pointer-events-auto landscape:bottom-4 landscape:justify-around landscape:hidden">
             <button 
                 onClick={(e) => { e.stopPropagation(); onResult(1); }}
-                className="flex items-center gap-2 px-6 py-3 bg-red-100 text-red-800 rounded-full shadow-sm hover:bg-red-200 active:scale-95 transition-all"
+                className="flex items-center gap-2 px-6 py-4 bg-red-100 text-red-800 rounded-full shadow-lg border border-red-200 hover:bg-red-200 active:scale-95 transition-all"
             >
-                <X size={20} /> Nog niet
+                <X size={24} /> Nog niet
             </button>
             <button 
                  onClick={(e) => { e.stopPropagation(); onResult(4); }}
-                className="flex items-center gap-2 px-6 py-3 bg-green-100 text-green-800 rounded-full shadow-sm hover:bg-green-200 active:scale-95 transition-all"
+                className="flex items-center gap-2 px-6 py-4 bg-green-100 text-green-800 rounded-full shadow-lg border border-green-200 hover:bg-green-200 active:scale-95 transition-all"
             >
-                <Check size={20} /> Ik weet het
+                <Check size={24} /> Ik weet het
             </button>
         </div>
     </div>
