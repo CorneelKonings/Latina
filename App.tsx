@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BookOpen, BarChart2, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle, Play, Home } from 'lucide-react';
-import { LatinWord, ViewState, MasteryLevel, User } from './types';
+import { LatinWord, ViewState, MasteryLevel, User, StudyInputMode } from './types';
 import { loadWords, saveWords, resetProgress } from './services/StorageService';
 import { getCurrentUser, logout } from './services/authService';
 import { getDueWords, calculateNextSRS } from './utils/srsLogic';
@@ -68,6 +68,7 @@ function AppContent() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [showStudySetup, setShowStudySetup] = useState(false);
+  const [studyInputMode, setStudyInputMode] = useState<StudyInputMode>('flashcard');
 
   // Initial Auth Check
   useEffect(() => {
@@ -94,11 +95,12 @@ function AppContent() {
     }
   }, [words, user]);
 
-  const handleStartSession = (selectedWords: LatinWord[]) => {
+  const handleStartSession = (selectedWords: LatinWord[], mode: StudyInputMode) => {
       // Shuffle selected words for better randomness
       const shuffled = [...selectedWords].sort(() => Math.random() - 0.5);
       setSessionWords(shuffled);
       setCurrentCardIndex(0);
+      setStudyInputMode(mode);
       setSessionComplete(false);
       setShowStudySetup(false);
       setView('study');
@@ -209,6 +211,7 @@ function AppContent() {
                     onResult={handleCardResult} 
                     currentIndex={currentCardIndex}
                     totalCards={sessionWords.length}
+                    inputMode={studyInputMode}
                 />
             )}
         </div>
@@ -350,7 +353,10 @@ function AppContent() {
 
                 <button 
                     onClick={() => setShowStudySetup(true)}
-                    className="absolute -top-6 left-1/2 -translate-x-1/2 w-16 h-16 bg-gradient-to-br from-roman-700 to-roman-900 text-gold-500 rounded-full shadow-2xl border-4 border-white flex items-center justify-center transform hover:scale-105 active:scale-95 transition-all shadow-roman-900/30"
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 w-16 h-16 bg-[radial-gradient(circle_at_30%_30%,_var(--tw-gradient-stops))] from-roman-600 via-roman-800 to-roman-950 text-gold-500 rounded-full shadow-2xl shadow-roman-900/40 border-4 border-white flex items-center justify-center transform hover:scale-105 active:scale-95 transition-all"
+                    style={{
+                      boxShadow: 'inset 2px 2px 5px rgba(255,255,255,0.2), inset -2px -2px 5px rgba(0,0,0,0.4), 0 10px 15px -3px rgba(0,0,0,0.3)'
+                    }}
                 >
                     <Play size={28} fill="currentColor" className="ml-1 drop-shadow-sm" />
                 </button>

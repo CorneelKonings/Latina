@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { LatinWord, MasteryLevel } from '../types';
-import { Play, RotateCcw, X, AlertTriangle, CheckSquare, Layers, ListFilter, Target } from 'lucide-react';
+import { LatinWord, MasteryLevel, StudyInputMode } from '../types';
+import { Play, RotateCcw, X, AlertTriangle, CheckSquare, Layers, ListFilter, Target, Keyboard, Mic, GalleryVerticalEnd } from 'lucide-react';
 
 interface StudySetupProps {
   words: LatinWord[];
-  onStart: (words: LatinWord[]) => void;
+  onStart: (words: LatinWord[], mode: StudyInputMode) => void;
   onCancel: () => void;
 }
 
@@ -15,6 +15,7 @@ interface WordWithIndex extends LatinWord {
 
 const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => {
   const [mode, setMode] = useState<'repetition' | 'specific'>('repetition');
+  const [inputMode, setInputMode] = useState<StudyInputMode>('flashcard');
   
   // State for "Herhaling" (Advanced Range Mode 30 + Filters)
   const [repCaput, setRepCaput] = useState<number>(1);
@@ -118,7 +119,7 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
         }
     }
 
-    onStart(selection);
+    onStart(selection, inputMode);
   };
 
   return (
@@ -132,6 +133,43 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
         </div>
 
         <div className="p-6 overflow-y-auto">
+          
+          {/* Input Mode Selection */}
+          <div className="mb-6">
+            <label className="block text-xs font-bold text-roman-500 uppercase mb-2">Studiemethode</label>
+            <div className="bg-roman-100 p-1 rounded-xl flex">
+                <button
+                    onClick={() => setInputMode('flashcard')}
+                    className={`flex-1 py-3 rounded-lg flex flex-col items-center gap-1 transition-all ${
+                        inputMode === 'flashcard' ? 'bg-white shadow-sm text-roman-900' : 'text-roman-500 hover:text-roman-700'
+                    }`}
+                >
+                    <GalleryVerticalEnd size={20} />
+                    <span className="text-xs font-bold">Kaart</span>
+                </button>
+                 <button
+                    onClick={() => setInputMode('typing')}
+                    className={`flex-1 py-3 rounded-lg flex flex-col items-center gap-1 transition-all ${
+                        inputMode === 'typing' ? 'bg-white shadow-sm text-roman-900' : 'text-roman-500 hover:text-roman-700'
+                    }`}
+                >
+                    <Keyboard size={20} />
+                    <span className="text-xs font-bold">Typen</span>
+                </button>
+                 <button
+                    onClick={() => setInputMode('voice')}
+                    className={`flex-1 py-3 rounded-lg flex flex-col items-center gap-1 transition-all ${
+                        inputMode === 'voice' ? 'bg-white shadow-sm text-roman-900' : 'text-roman-500 hover:text-roman-700'
+                    }`}
+                >
+                    <Mic size={20} />
+                    <span className="text-xs font-bold">Spraak</span>
+                </button>
+            </div>
+          </div>
+
+          <div className="h-px bg-roman-100 mb-6"></div>
+
           {/* Mode Selection */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <button

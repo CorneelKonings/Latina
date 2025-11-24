@@ -38,3 +38,5 @@ export interface User {
 }
 
 export type ViewState = 'dashboard' | 'study' | 'dictionary' | 'add-word' | 'settings';
+
+export type StudyInputMode = 'flashcard' | 'typing' | 'voice';

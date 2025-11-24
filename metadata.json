@@ -1,5 +1,7 @@
 {
   "name": "Via Latina",
   "description": "Een geavanceerde Latijnse woordenschat app met Spaced Repetition en uitgebreide statistieken.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }
