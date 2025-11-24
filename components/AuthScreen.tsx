@@ -124,7 +124,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
         </div>
         
         <div className="absolute bottom-6 text-roman-300 text-xs">
-            © MMXIV Via Latina AI
+            © MMXXV Via Latina
         </div>
     </div>
   );
