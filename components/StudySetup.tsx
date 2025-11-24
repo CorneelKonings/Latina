@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LatinWord, MasteryLevel, StudyInputMode } from '../types';
 import { Play, RotateCcw, X, AlertTriangle, CheckSquare, Layers, ListFilter, Target, Keyboard, Mic, GalleryVerticalEnd } from 'lucide-react';
 
@@ -8,12 +8,10 @@ interface StudySetupProps {
   onCancel: () => void;
 }
 
-interface GlobalRange {
+interface ChapterRange {
     startIndex: number;
     endIndex: number;
     label: string;
-    firstChapter: number;
-    lastChapter: number;
 }
 
 const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => {
@@ -30,72 +28,98 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
   const [specCaput, setSpecCaput] = useState<number>(1);
   const [specRangeIndex, setSpecRangeIndex] = useState<number>(0);
 
-  // 1. Calculate global order: Sort by Chapter then ID to ensure book order
+  // 1. Robust Global Sort: Chapter then Numeric ID
   const sortedGlobalWords = useMemo(() => {
-    return [...words]
-        .sort((a, b) => {
-            if (a.chapter !== b.chapter) return a.chapter - b.chapter;
-            return a.id.localeCompare(b.id, undefined, { numeric: true });
-        })
-        .map((w, index) => ({ ...w, globalIndex: index + 1 }));
+    return [...words].sort((a, b) => {
+        // 1. Compare Chapter
+        const chapA = Number(a.chapter);
+        const chapB = Number(b.chapter);
+        if (chapA !== chapB) return chapA - chapB;
+        
+        // 2. Compare Numeric ID suffix (e.g. c1-001 -> 1)
+        const getNum = (id: string) => {
+            // Try to find hyphenated number first: c1-001
+            const match = id.match(/-(\d+)$/);
+            if (match) return parseInt(match[1], 10);
+            
+            // Fallback: any sequence of digits at end
+            const match2 = id.match(/(\d+)$/);
+            return match2 ? parseInt(match2[1], 10) : 0;
+        };
+        
+        const numA = getNum(a.id);
+        const numB = getNum(b.id);
+        if (numA !== numB) return numA - numB;
+        
+        // 3. Fallback string compare
+        return a.id.localeCompare(b.id);
+    });
   }, [words]);
 
-  // Helper to generate continuous global ranges
-  const generateGlobalRanges = (step: number): GlobalRange[] => {
-      const ranges: GlobalRange[] = [];
-      if (sortedGlobalWords.length === 0) return ranges;
+  // Determine active chapter based on mode
+  const activeCaput = mode === 'repetition' ? repCaput : specCaput;
 
-      for (let i = 0; i < sortedGlobalWords.length; i += step) {
-          const chunk = sortedGlobalWords.slice(i, i + step);
+  // 2. Get words ONLY for the active chapter (prevents overlap/shifting)
+  const activeChapterWords = useMemo(() => {
+      return sortedGlobalWords.filter(w => w.chapter === activeCaput);
+  }, [sortedGlobalWords, activeCaput]);
+
+  // 3. Generate Ranges relative to the CHAPTER list
+  const generateRanges = (step: number): ChapterRange[] => {
+      const ranges: ChapterRange[] = [];
+      if (activeChapterWords.length === 0) return ranges;
+
+      for (let i = 0; i < activeChapterWords.length; i += step) {
+          const chunk = activeChapterWords.slice(i, i + step);
           if (chunk.length === 0) continue;
 
           const first = chunk[0];
           const last = chunk[chunk.length - 1];
 
+          // Helper to get display ID (e.g. "1" from "c1-001")
+          const getDisplayId = (word: LatinWord) => {
+              const match = word.id.match(/-(\d+)$/);
+              return match ? parseInt(match[1], 10) : null;
+          };
+
+          const startID = getDisplayId(first);
+          const endID = getDisplayId(last);
+
+          // If IDs are standard, use them. If not (user added), use relative index.
+          const label = (startID !== null && endID !== null) 
+              ? `${startID} - ${endID}` 
+              : `${i + 1} - ${i + chunk.length}`;
+
           ranges.push({
               startIndex: i,
               endIndex: i + step,
-              label: `${first.globalIndex} - ${last.globalIndex}`,
-              firstChapter: first.chapter,
-              lastChapter: last.chapter
+              label: label
           });
       }
       return ranges;
   };
 
-  // --- HERHALING RANGES (Step 30) ---
-  const repRangesGlobal = useMemo(() => generateGlobalRanges(30), [sortedGlobalWords]);
-  
-  // Filter ranges for the selected Caput: Show if range overlaps with selected Caput
-  const visibleRepRanges = useMemo(() => {
-      return repRangesGlobal.filter(r => 
-          // Check overlap: Range starts before or in Caput AND ends in or after Caput
-          (r.firstChapter <= repCaput && r.lastChapter >= repCaput)
-      );
-  }, [repRangesGlobal, repCaput]);
+  const currentRanges = useMemo(() => {
+      const step = mode === 'repetition' ? 30 : 10;
+      return generateRanges(step);
+  }, [activeChapterWords, mode]);
 
-
-  // --- SPECIFIEK RANGES (Step 10) ---
-  const specRangesGlobal = useMemo(() => generateGlobalRanges(10), [sortedGlobalWords]);
-  
-  const visibleSpecRanges = useMemo(() => {
-      return specRangesGlobal.filter(r => 
-           (r.firstChapter <= specCaput && r.lastChapter >= specCaput)
-      );
-  }, [specRangesGlobal, specCaput]);
-
+  // Validate range indices when chapter changes
+  useEffect(() => {
+      setRepRangeIndex(0);
+      setSpecRangeIndex(0);
+  }, [activeCaput, mode]);
 
   const handleStart = () => {
     let selection: LatinWord[] = [];
 
     if (mode === 'repetition') {
         if (repScope === 'whole') {
-            // Select all words strictly in this chapter
-            selection = sortedGlobalWords.filter(w => w.chapter === repCaput);
+            selection = activeChapterWords;
         } else {
-            const range = visibleRepRanges[repRangeIndex];
+            const range = currentRanges[repRangeIndex];
             if (range) {
-                selection = sortedGlobalWords.slice(range.startIndex, range.endIndex);
+                selection = activeChapterWords.slice(range.startIndex, range.endIndex);
             }
         }
 
@@ -110,10 +134,10 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
             return;
         }
     } else {
-        // Specific Logic: Always ranges of 10
-        const range = visibleSpecRanges[specRangeIndex];
+        // Specific Mode
+        const range = currentRanges[specRangeIndex];
         if (range) {
-             selection = sortedGlobalWords.slice(range.startIndex, range.endIndex);
+             selection = activeChapterWords.slice(range.startIndex, range.endIndex);
         }
             
         if (selection.length === 0) {
@@ -127,7 +151,7 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
 
   const availableChapters = useMemo(() => {
       const chapters = new Set(words.map(w => w.chapter));
-      // Ensure 1-7 are always there for the book structure, add others if present
+      // Ensure 1-7 are always visible
       [1,2,3,4,5,6,7].forEach(c => chapters.add(c));
       return Array.from(chapters).sort((a: number, b: number) => a - b);
   }, [words]);
@@ -215,7 +239,7 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
                   {availableChapters.map(num => (
                     <button
                       key={num}
-                      onClick={() => { setRepCaput(num); setRepRangeIndex(0); }}
+                      onClick={() => setRepCaput(num)}
                       className={`w-10 h-10 rounded-lg font-serif font-bold transition-colors flex items-center justify-center ${
                         repCaput === num
                           ? 'bg-roman-600 text-white shadow-md'
@@ -255,7 +279,7 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
                          Kies Reeks (per 30)
                      </label>
                      <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto no-scrollbar">
-                       {visibleRepRanges.map((range, idx) => (
+                       {currentRanges.map((range, idx) => (
                           <button
                             key={idx}
                             onClick={() => setRepRangeIndex(idx)}
@@ -265,15 +289,10 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
                                  : 'border-roman-200 text-roman-500 hover:border-roman-400'
                             }`}
                           >
-                              <span className="block">{range.label}</span>
-                              {(range.firstChapter !== range.lastChapter) && (
-                                  <span className="text-[10px] text-roman-400 font-normal">
-                                      Cap {range.firstChapter} & Cap {range.lastChapter}
-                                  </span>
-                              )}
+                              <span className="block">Woord {range.label}</span>
                           </button>
                        ))}
-                       {visibleRepRanges.length === 0 && <span className="text-sm text-roman-400 italic">Geen reeksen gevonden.</span>}
+                       {currentRanges.length === 0 && <span className="text-sm text-roman-400 italic">Geen reeksen gevonden voor dit hoofdstuk.</span>}
                      </div>
                   </div>
               )}
@@ -303,7 +322,6 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
               <div className="bg-roman-50 p-4 rounded-lg border border-roman-100">
                   <p className="text-roman-700 text-sm italic">
                       Kies een hoofdstuk en een reeks van 10 woorden.
-                      Reeksen lopen door over hoofdstukgrenzen heen.
                   </p>
               </div>
 
@@ -313,7 +331,7 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
                   {availableChapters.map(num => (
                     <button
                       key={num}
-                      onClick={() => { setSpecCaput(num); setSpecRangeIndex(0); }}
+                      onClick={() => setSpecCaput(num)}
                       className={`w-10 h-10 rounded-lg font-serif font-bold transition-colors flex items-center justify-center ${
                         specCaput === num
                           ? 'bg-roman-600 text-white shadow-md'
@@ -332,7 +350,7 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
                      Kies Reeks (per 10)
                  </label>
                  <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto no-scrollbar">
-                   {visibleSpecRanges.map((range, idx) => (
+                   {currentRanges.map((range, idx) => (
                       <button
                         key={idx}
                         onClick={() => setSpecRangeIndex(idx)}
@@ -343,14 +361,9 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
                         }`}
                       >
                           <span>{range.label}</span>
-                          {(range.firstChapter !== range.lastChapter) && (
-                                <span className="text-[9px] text-roman-400 font-normal leading-none mt-1">
-                                    Cap {range.firstChapter}-{range.lastChapter}
-                                </span>
-                           )}
                       </button>
                    ))}
-                   {visibleSpecRanges.length === 0 && <span className="text-sm text-roman-400 italic">Geen reeksen gevonden.</span>}
+                   {currentRanges.length === 0 && <span className="text-sm text-roman-400 italic">Geen reeksen gevonden.</span>}
                  </div>
               </div>
 
