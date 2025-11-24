@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { BookOpen, BarChart2, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle, Play, Home } from 'lucide-react';
+import React, { useState, useEffect, useMemo, Component } from 'react';
+import { BookOpen, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle, Play, Home } from 'lucide-react';
 import { LatinWord, ViewState, MasteryLevel, User, StudyInputMode } from './types';
-import { loadWords, saveWords, resetProgress } from './services/StorageService';
+import { loadWords, saveWords, resetProgress } from './services/storageService';
 import { getCurrentUser, logout } from './services/authService';
 import { getDueWords, calculateNextSRS } from './utils/srsLogic';
 import Dashboard from './components/Dashboard';
@@ -9,6 +9,7 @@ import Flashcard from './components/Flashcard';
 import AddWordForm from './components/AddWordForm';
 import StudySetup from './components/StudySetup';
 import AuthScreen from './components/AuthScreen';
+import SessionSummary from './components/SessionSummary';
 
 interface ErrorBoundaryProps {
   children?: React.ReactNode;
@@ -19,13 +20,8 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = { hasError: false, error: null };
-
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
@@ -69,6 +65,7 @@ function AppContent() {
   const [sessionComplete, setSessionComplete] = useState(false);
   const [showStudySetup, setShowStudySetup] = useState(false);
   const [studyInputMode, setStudyInputMode] = useState<StudyInputMode>('flashcard');
+  const [sessionResults, setSessionResults] = useState<{ word: LatinWord; isCorrect: boolean }[]>([]);
 
   // Initial Auth Check
   useEffect(() => {
@@ -99,6 +96,7 @@ function AppContent() {
       // Shuffle selected words for better randomness
       const shuffled = [...selectedWords].sort(() => Math.random() - 0.5);
       setSessionWords(shuffled);
+      setSessionResults([]);
       setCurrentCardIndex(0);
       setStudyInputMode(mode);
       setSessionComplete(false);
@@ -109,21 +107,25 @@ function AppContent() {
   const handleCardResult = (quality: number) => {
     const currentWord = sessionWords[currentCardIndex];
     
-    // Calculate new SRS state (only update main state, not the session copy immediately)
+    // Save Result (Quality >= 3 is considered correct/Pass)
+    const isCorrect = quality >= 3;
+    setSessionResults(prev => [...prev, { word: currentWord, isCorrect }]);
+
+    // Update SRS
     const newSRS = calculateNextSRS(currentWord.srs, quality);
     const updatedWords = words.map(w => w.id === currentWord.id ? { ...w, srs: newSRS } : w);
     setWords(updatedWords);
-
-    // RETRY LOGIC: If quality is 1 (Nog niet/Hard), append to end of session
-    if (quality === 1) {
-        setSessionWords(prev => [...prev, currentWord]);
-    }
 
     if (currentCardIndex < sessionWords.length - 1) {
       setCurrentCardIndex(prev => prev + 1);
     } else {
       setSessionComplete(true);
     }
+  };
+
+  const handleRetryIncorrect = () => {
+      const incorrectWords = sessionResults.filter(r => !r.isCorrect).map(r => r.word);
+      handleStartSession(incorrectWords, studyInputMode);
   };
 
   const handleAddWord = (newWord: LatinWord) => {
@@ -174,17 +176,11 @@ function AppContent() {
   const renderStudy = () => (
     <div className="h-full flex flex-col items-center justify-center animate-in zoom-in-95 duration-300 pb-32">
       {sessionComplete ? (
-        <div className="text-center p-8 bg-white rounded-2xl shadow-xl max-w-sm">
-          <GraduationCap size={64} className="mx-auto text-roman-600 mb-4" />
-          <h2 className="text-2xl font-serif text-roman-900 mb-2">Sessie Voltooid!</h2>
-          <p className="text-roman-600 mb-6">Je voortgang is opgeslagen. Bene factum!</p>
-          <button 
-            onClick={() => setView('dashboard')}
-            className="w-full py-3 bg-roman-800 text-white rounded-lg font-bold"
-          >
-            Terug naar Home
-          </button>
-        </div>
+        <SessionSummary 
+            results={sessionResults}
+            onRetry={handleRetryIncorrect}
+            onHome={() => setView('dashboard')}
+        />
       ) : (
         <div className="w-full max-w-lg flex flex-col items-center landscape:flex-row landscape:justify-center landscape:gap-8 relative">
             <div className="w-full flex justify-between items-center mb-8 px-4 landscape:hidden">

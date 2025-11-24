@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
 import { LatinWord, StudyInputMode } from '../types';
-import { RotateCcw, Check, X, Mic, Keyboard, CornerDownLeft } from 'lucide-react';
+import { RotateCcw, Check, X, Mic, CornerDownLeft, ArrowRight } from 'lucide-react';
 
 interface FlashcardProps {
   word: LatinWord;
@@ -87,9 +87,24 @@ const Flashcard: React.FC<FlashcardProps> = ({ word, onResult, currentIndex, tot
       setFlipped(true);
   };
 
+  const handleNext = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!isChecked) {
+          checkAnswer();
+      } else {
+          // Automatic grading for interactive modes
+          // 4 = Perfect/Good (Correct), 1 = Again/Fail (Incorrect)
+          onResult(isCorrect ? 4 : 1);
+      }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
-          checkAnswer();
+           if (!isChecked) {
+                checkAnswer();
+            } else {
+                onResult(isCorrect ? 4 : 1);
+            }
       }
   };
 
@@ -188,11 +203,19 @@ const Flashcard: React.FC<FlashcardProps> = ({ word, onResult, currentIndex, tot
                         )}
                     </div>
                     <button 
-                        onClick={checkAnswer}
-                        disabled={!userInput}
-                        className="w-full py-3 bg-roman-800 text-gold-500 font-bold rounded-xl shadow-md hover:bg-roman-900 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        onClick={handleNext}
+                        disabled={!userInput && !isChecked}
+                        className={`w-full py-3 font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 ${
+                            isChecked 
+                             ? (isCorrect ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-roman-800 text-white hover:bg-roman-900') 
+                             : 'bg-roman-800 text-gold-500 hover:bg-roman-900'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                        <CornerDownLeft size={16} /> Controleren
+                        {isChecked ? (
+                            <>Volgende <ArrowRight size={16} /></>
+                        ) : (
+                            <><CornerDownLeft size={16} /> Controleren</>
+                        )}
                     </button>
                 </div>
             )}
@@ -267,34 +290,23 @@ const Flashcard: React.FC<FlashcardProps> = ({ word, onResult, currentIndex, tot
           </>
       )}
 
-        {/* Buttons - Logic changes based on mode */}
-       <div className="absolute -bottom-24 left-0 right-0 flex justify-between px-4 z-50 pointer-events-auto landscape:-bottom-24 landscape:justify-around">
-            {/* 
-               In standard mode: always visible.
-               In interactive mode: only visible after check.
-            */}
-            {(!isInteractiveMode || isChecked) && (
-                <>
-                     <button 
-                        onClick={(e) => { e.stopPropagation(); onResult(1); }}
-                        className="flex items-center gap-2 px-6 py-4 bg-red-100 text-red-800 rounded-full shadow-lg border border-red-200 hover:bg-red-200 active:scale-95 transition-all"
-                    >
-                        <X size={24} /> Nog niet
-                    </button>
-                    <button 
-                         onClick={(e) => { e.stopPropagation(); onResult(4); }}
-                        className={`flex items-center gap-2 px-6 py-4 rounded-full shadow-lg border transition-all active:scale-95 ${
-                            // Highlight "Good" if auto-checked correctly
-                            isInteractiveMode && isCorrect 
-                            ? 'bg-green-600 text-white border-green-700 ring-4 ring-green-200' 
-                            : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'
-                        }`}
-                    >
-                        <Check size={24} /> Ik weet het
-                    </button>
-                </>
-            )}
-        </div>
+        {/* Buttons - Only shown for Standard Flashcard Mode */}
+       {!isInteractiveMode && (
+           <div className="absolute -bottom-24 left-0 right-0 flex justify-between px-4 z-50 pointer-events-auto landscape:-bottom-24 landscape:justify-around">
+                 <button 
+                    onClick={(e) => { e.stopPropagation(); onResult(1); }}
+                    className="flex items-center gap-2 px-6 py-4 bg-red-100 text-red-800 rounded-full shadow-lg border border-red-200 hover:bg-red-200 active:scale-95 transition-all"
+                >
+                    <X size={24} /> Nog niet
+                </button>
+                <button 
+                     onClick={(e) => { e.stopPropagation(); onResult(4); }}
+                    className="flex items-center gap-2 px-6 py-4 bg-green-100 text-green-800 rounded-full shadow-lg border border-green-200 hover:bg-green-200 active:scale-95 transition-all"
+                >
+                    <Check size={24} /> Ik weet het
+                </button>
+            </div>
+       )}
     </div>
   );
 };
