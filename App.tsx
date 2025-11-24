@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, Component, ReactNode } from 'react';
-import { BookOpen, BarChart2, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle, Play } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { BookOpen, BarChart2, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle, Play, Home } from 'lucide-react';
 import { LatinWord, ViewState, MasteryLevel, User } from './types';
-import { loadWords, saveWords, resetProgress } from './services/StorageService';
+import { loadWords, saveWords, resetProgress } from './services/storageService';
 import { getCurrentUser, logout } from './services/authService';
 import { getDueWords, calculateNextSRS } from './utils/srsLogic';
 import Dashboard from './components/Dashboard';
@@ -11,7 +11,7 @@ import StudySetup from './components/StudySetup';
 import AuthScreen from './components/AuthScreen';
 
 interface ErrorBoundaryProps {
-  children: ReactNode;
+  children?: React.ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -20,6 +20,8 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = { hasError: false, error: null };
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -164,14 +166,6 @@ function AppContent() {
       </div>
 
       <Dashboard words={words} />
-
-      <button 
-        onClick={() => setShowStudySetup(true)}
-        className="fixed bottom-24 right-6 bg-roman-800 text-gold-500 pl-5 pr-6 py-4 rounded-full font-bold shadow-xl shadow-roman-900/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 z-30"
-      >
-        <Play size={24} fill="currentColor" />
-        <span className="text-lg">Start Studie</span>
-      </button>
     </div>
   );
 
@@ -224,11 +218,14 @@ function AppContent() {
 
   const renderDictionary = () => (
     <div className="space-y-6 h-full flex flex-col animate-in fade-in duration-500">
-      <header className="flex items-center gap-4">
-          <button onClick={() => setView('dashboard')} className="p-2 bg-white rounded-full text-roman-600 shadow-sm">
-             <ChevronLeft />
-          </button>
+      <header className="flex items-center justify-between">
           <h2 className="text-2xl font-serif text-roman-900 font-bold">Woordenboek</h2>
+          <button 
+            onClick={() => setView('add-word')}
+            className="w-10 h-10 bg-roman-100 text-roman-600 rounded-full flex items-center justify-center hover:bg-roman-200"
+          >
+            <span className="text-xl font-bold">+</span>
+          </button>
       </header>
 
       <div className="relative">
@@ -261,13 +258,6 @@ function AppContent() {
               </div>
           )}
       </div>
-
-       <button 
-        onClick={() => setView('add-word')}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-roman-800 text-gold-500 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-10"
-      >
-        <span className="text-2xl font-bold">+</span>
-      </button>
     </div>
   );
 
@@ -287,9 +277,6 @@ function AppContent() {
   const renderSettings = () => (
       <div className="space-y-6 animate-in fade-in duration-500">
           <header className="flex items-center gap-4">
-             <button onClick={() => setView('dashboard')} className="p-2 bg-white rounded-full text-roman-600 shadow-sm">
-                <ChevronLeft />
-             </button>
              <h2 className="text-2xl font-serif text-roman-900 font-bold">Instellingen</h2>
           </header>
 
@@ -341,17 +328,68 @@ function AppContent() {
       {/* Background Texture */}
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: "url('https://www.transparenttextures.com/patterns/cream-paper.png')" }}></div>
 
-      <main className="relative z-0 h-screen overflow-y-auto no-scrollbar p-6 pb-24 max-w-2xl mx-auto">
+      <main className="relative z-0 h-screen overflow-y-auto no-scrollbar p-6 pb-28 max-w-2xl mx-auto">
         {view === 'dashboard' && renderDashboard()}
         {view === 'study' && renderStudy()}
         {view === 'dictionary' && renderDictionary()}
         {view === 'add-word' && renderAddWord()}
         {view === 'settings' && renderSettings()}
       </main>
+
+      {/* Bottom Navigation Bar */}
+      {view !== 'study' && view !== 'add-word' && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-roman-200 z-50 pb-safe">
+            <div className="max-w-2xl mx-auto h-16 flex items-center justify-between px-8 relative">
+                <button 
+                    onClick={() => setView('dashboard')}
+                    className={`flex flex-col items-center gap-1 ${view === 'dashboard' ? 'text-roman-800' : 'text-roman-400'}`}
+                >
+                    <Home size={24} />
+                    <span className="text-[10px] uppercase font-bold tracking-wider">Home</span>
+                </button>
+
+                <button 
+                    onClick={() => setShowStudySetup(true)}
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 w-16 h-16 bg-gradient-to-br from-roman-700 to-roman-900 text-gold-500 rounded-full shadow-2xl border-4 border-white flex items-center justify-center transform hover:scale-105 active:scale-95 transition-all shadow-roman-900/30"
+                >
+                    <Play size={28} fill="currentColor" className="ml-1 drop-shadow-sm" />
+                </button>
+
+                <button 
+                    onClick={() => setView('dictionary')}
+                    className={`flex flex-col items-center gap-1 ${view === 'dictionary' ? 'text-roman-800' : 'text-roman-400'}`}
+                >
+                    <BookOpen size={24} />
+                    <span className="text-[10px] uppercase font-bold tracking-wider">Boek</span>
+                </button>
+                
+                <button 
+                    onClick={() => setView('settings')}
+                    className={`flex flex-col items-center gap-1 ${view === 'settings' ? 'text-roman-800' : 'text-roman-400'}`}
+                >
+                    <Settings size={24} />
+                    <span className="text-[10px] uppercase font-bold tracking-wider">Opties</span>
+                </button>
+            </div>
+        </div>
+      )}
       
       {/* Study Setup Modal */}
       {showStudySetup && (
           <StudySetup 
             words={words} 
             onStart={handleStartSession} 
-            onCancel={() => setShowStudySetup(false
+            onCancel={() => setShowStudySetup(false)}
+          />
+      )}
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  );
+}

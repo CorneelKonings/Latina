@@ -8,6 +8,11 @@ interface StudySetupProps {
   onCancel: () => void;
 }
 
+// Helper to keep track of the global book number
+interface WordWithIndex extends LatinWord {
+    globalIndex: number;
+}
+
 const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => {
   const [mode, setMode] = useState<'repetition' | 'specific'>('repetition');
   
@@ -21,12 +26,17 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
   const [specCaput, setSpecCaput] = useState<number>(1);
   const [specRangeIndex, setSpecRangeIndex] = useState<number>(0);
 
+  // 1. Calculate global order for all words to assign continuous book numbers (1, 2, ... N)
+  const sortedGlobalWords = useMemo(() => {
+    return [...words]
+        .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }))
+        .map((w, index) => ({ ...w, globalIndex: index + 1 }));
+  }, [words]);
+
   // --- HERHALING DATA (Step 30) ---
   const repBaseWords = useMemo(() => {
-      return words
-        .filter(w => w.chapter === repCaput)
-        .sort((a, b) => a.id.localeCompare(b.id));
-  }, [words, repCaput]);
+      return sortedGlobalWords.filter(w => w.chapter === repCaput);
+  }, [sortedGlobalWords, repCaput]);
 
   const repRanges = useMemo(() => {
     const r = [];
@@ -34,12 +44,14 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
     
     const step = 30;
     for (let i = 0; i < repBaseWords.length; i += step) {
-      const start = i + 1;
-      const end = Math.min(i + step, repBaseWords.length);
+      const chunk = repBaseWords.slice(i, i + step);
+      const startNum = chunk[0].globalIndex;
+      const endNum = chunk[chunk.length - 1].globalIndex;
+      
       r.push({
         startIndex: i,
-        endIndex: Math.min(i + step, repBaseWords.length),
-        label: `${start} - ${end}`
+        endIndex: i + chunk.length,
+        label: `${startNum} - ${endNum}`
       });
     }
     return r;
@@ -47,10 +59,8 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
 
   // --- SPECIFIEK DATA (Step 10) ---
   const specBaseWords = useMemo(() => {
-      return words
-        .filter(w => w.chapter === specCaput)
-        .sort((a, b) => a.id.localeCompare(b.id));
-  }, [words, specCaput]);
+      return sortedGlobalWords.filter(w => w.chapter === specCaput);
+  }, [sortedGlobalWords, specCaput]);
 
   const specRanges = useMemo(() => {
     const r = [];
@@ -58,12 +68,14 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
     
     const step = 10;
     for (let i = 0; i < specBaseWords.length; i += step) {
-      const start = i + 1;
-      const end = Math.min(i + step, specBaseWords.length);
+      const chunk = specBaseWords.slice(i, i + step);
+      const startNum = chunk[0].globalIndex;
+      const endNum = chunk[chunk.length - 1].globalIndex;
+
       r.push({
         startIndex: i,
-        endIndex: Math.min(i + step, specBaseWords.length),
-        label: `${start} - ${end}`
+        endIndex: i + chunk.length,
+        label: `${startNum} - ${endNum}`
       });
     }
     return r;
@@ -78,6 +90,7 @@ const StudySetup: React.FC<StudySetupProps> = ({ words, onStart, onCancel }) => 
         } else {
             const range = repRanges[repRangeIndex];
             if (range) {
+                // Slice from the filtered chapter list
                 selection = repBaseWords.slice(range.startIndex, range.endIndex);
             }
         }
