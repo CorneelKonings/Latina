@@ -11,7 +11,8 @@ export default defineConfig(({ mode }) => {
     base: './',
     plugins: [react()],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || '')
+      // Prioritize process.env.API_KEY (System Env for Vercel/Netlify) -> env.API_KEY (.env file) -> empty string
+      'process.env.API_KEY': JSON.stringify(process.env.API_KEY || env.API_KEY || '')
     }
   };
 });

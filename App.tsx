@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { BookOpen, GraduationCap, Settings, Search, ChevronLeft, LogOut, AlertTriangle, Play, Home } from 'lucide-react';
 import { LatinWord, ViewState, MasteryLevel, User, StudyInputMode } from './types';
-import { loadWords, saveWords, resetProgress } from './services/storageService';
+import { loadWords, saveWords, resetProgress } from './services/StorageService';
 import { getCurrentUser, logout } from './services/authService';
 import { getDueWords, calculateNextSRS } from './utils/srsLogic';
 import Dashboard from './components/Dashboard';
